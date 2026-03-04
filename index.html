@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="sw">
+<head>
+    <meta charset="UTF-8">
+    <title>Receipt Generator</title>
+    <style>
+        /* General Styling for Screen */
+        body {
+            font-family: 'Courier New', Courier, monospace;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background-color: #f0f0f0;
+            padding: 20px;
+        }
+
+        /* Receipt Container */
+        #receipt {
+            background-color: white;
+            width: 80mm; /* Standard POS width */
+            padding: 10mm;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            text-transform: uppercase; /* Match image style */
+            font-size: 14px;
+            line-height: 1.2;
+        }
+
+        .center { text-align: center; }
+        .divider { border-top: 1px dashed #000; margin: 10px 0; }
+        .double-divider { border-top: 2px double #000; margin: 10px 0; }
+
+        /* Barcode Placeholder */
+        .barcode {
+            width: 100%;
+            height: 50px;
+            background: repeating-linear-gradient(90deg, #000, #000 2px, #fff 2px, #fff 4px);
+            margin-top: 10px;
+        }
+
+        button {
+            margin-top: 20px;
+            padding: 10px 20px;
+            cursor: pointer;
+        }
+
+        /* Print Settings */
+        @media print {
+            body { background-color: white; padding: 0; }
+            button { display: none; }
+            #receipt { box-shadow: none; width: 100%; margin: 0; }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="receipt">
+        <div class="center">
+            Halmashauri ya Jiji la Dar es Salaam<br>
+            Receipt No: 1421102411123
+        </div>
+        
+        <div class="divider"></div>
+        <div class="center">KAJENJERE TRADING CO.LTD</div>
+        <div class="double-divider"></div>
+
+        <div>ADA ZA TAKA :Tsh 30000.00</div>
+        <br>
+        <div>JUMLA :Tsh 30000.00</div>
+        
+        <div class="double-divider"></div>
+
+        <div>JINA LA MLIPAJI :Mnazi. Traspot</div>
+        <div>taka mwezi Feb/2026/ kamata</div>
+        <div>ANUANI :</div>
+        <div>MPOKEAJI :KAJENJERE TRADING CO.LTD 191</div>
+
+        <div class="double-divider"></div>
+
+        <div>TAREHE 04-03-2026 11:12:30</div>
+        <div class="center" style="margin-top: 5px;">
+            HII NI STAKABADHI HALALI YA FEDHA ILIYOLIPWA
+        </div>
+
+        <div class="barcode"></div>
+    </div>
+
+    <button onclick="window.print()">Print Receipt</button>
+
+</body>
+</html>
