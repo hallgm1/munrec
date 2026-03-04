@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Editable Receipt Generator</title>
     <style>
-        /* Base styles */
         body {
             font-family: 'Courier New', Courier, monospace;
             background-color: #e0e0e0;
@@ -16,21 +15,49 @@
             margin: 0;
         }
 
-        /* Instructions for user */
-        .controls {
-            background: #333;
-            color: white;
-            padding: 15px;
-            border-radius: 8px;
+        /* --- Button Panel Styling --- */
+        .controls-container {
+            width: 90mm;
+            background: #fff;
+            padding: 20px;
+            border-radius: 10px;
             margin-bottom: 20px;
-            text-align: center;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
         }
 
-        /* The Receipt Paper */
+        .btn {
+            border: none;
+            color: white;
+            padding: 15px;
+            font-size: 16px;
+            font-weight: bold;
+            border-radius: 5px;
+            cursor: pointer;
+            text-transform: uppercase;
+            transition: opacity 0.2s;
+        }
+
+        .btn:active { opacity: 0.8; }
+
+        .btn-preview { background-color: #3498db; width: 100%; }
+        
+        .row {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .btn-print { background-color: #27ae60; flex: 1; }
+        .btn-archive { background-color: #e67e22; flex: 1; }
+        
+        .btn-reset { background-color: #95a5a6; width: 100%; }
+
+        /* --- Receipt Styling --- */
         #receipt {
             background-color: white;
-            width: 72mm; /* Standard thermal width */
+            width: 72mm;
             padding: 8mm;
             box-shadow: 0 0 15px rgba(0,0,0,0.2);
             font-size: 13px;
@@ -38,69 +65,52 @@
             color: #000;
         }
 
-        /* Elements that look like the POS print */
+        .preview-mode {
+            outline: 5px solid #3498db;
+        }
+
         .center { text-align: center; }
         .bold { font-weight: bold; }
         .divider { border-top: 1px dashed #000; margin: 8px 0; }
-        .double-divider { border-top: 3px double #000; margin: 8px 0; border-bottom: none; height: 0; }
+        .double-divider { border-top: 3px double #000; margin: 8px 0; height: 0; }
         
-        /* Highlight editable areas slightly on hover for the UI */
-        [contenteditable="true"]:hover {
-            background-color: #fff9c4;
-            outline: 1px dashed #ccc;
+        [contenteditable="true"]:focus {
+            background-color: #fffde7;
+            outline: 1px solid #3498db;
         }
 
-        /* Fake Barcode */
-        .barcode-container {
-            margin-top: 15px;
-            text-align: center;
-        }
         .barcode {
-            display: inline-block;
             width: 100%;
             height: 40px;
             background: repeating-linear-gradient(90deg, #000, #000 1px, #fff 1px, #fff 3px);
+            margin-top: 15px;
         }
 
-        button {
-            background-color: #2e7d32;
-            color: white;
-            border: none;
-            padding: 12px 25px;
-            font-size: 16px;
-            border-radius: 5px;
-            cursor: pointer;
-            margin-top: 10px;
-        }
-
-        button:hover { background-color: #1b5e20; }
-
-        /* Print Settings */
+        /* --- Print Rules --- */
         @media print {
-            .controls, button { display: none !important; }
+            .controls-container { display: none !important; }
             body { background-color: white; padding: 0; }
-            #receipt { 
-                box-shadow: none; 
-                width: 100%; 
-                padding: 0;
-                margin: 0;
-            }
-            [contenteditable="true"]:hover { background-color: transparent; outline: none; }
+            #receipt { box-shadow: none; width: 100%; margin: 0; }
         }
     </style>
 </head>
 <body>
 
-    <div class="controls">
-        <strong>RECEIPT EDITOR</strong><br>
-        Click any text below to change it.<br>
-        <button onclick="window.print()">PRINT RECEIPT</button>
+    <div class="controls-container">
+        <button class="btn btn-preview" onclick="togglePreview()">Preview</button>
+        
+        <div class="row">
+            <button class="btn btn-print" onclick="window.print()">Print</button>
+            <button class="btn btn-archive" onclick="alert('Receipt Saved to Archive')">Archive</button>
+        </div>
+        
+        <button class="btn btn-reset" onclick="resetReceipt()">Reset to 1</button>
     </div>
 
     <div id="receipt">
         <div class="center">
             <div contenteditable="true">Halmashauri ya Jiji la Dar es Salaam</div>
-            <div>Receipt No: <span contenteditable="true">1421102411123</span></div>
+            <div>Receipt No: <span id="receipt-no" contenteditable="true">1421102411123</span></div>
         </div>
         
         <div class="divider"></div>
@@ -126,21 +136,30 @@
             HII NI STAKABADHI HALALI YA FEDHA ILIYOLIPWA
         </div>
 
-        <div class="barcode-container">
-            <div class="barcode"></div>
-        </div>
+        <div class="barcode"></div>
     </div>
 
     <script>
-        // Automatically set the current date/time on load
+        // Update date on load
         function updateDateTime() {
             const now = new Date();
             const dateStr = now.toLocaleDateString('en-GB').replace(/\//g, '-');
             const timeStr = now.toLocaleTimeString('en-GB');
             document.getElementById('current-date').innerText = `TAREHE ${dateStr} ${timeStr}`;
         }
+
+        // Toggle Preview Mode (visual cue)
+        function togglePreview() {
+            document.getElementById('receipt').classList.toggle('preview-mode');
+        }
+
+        // Reset Receipt Number to 1
+        function resetReceipt() {
+            if(confirm("Are you sure you want to reset the receipt number?")) {
+                document.getElementById('receipt-no').innerText = "1";
+            }
+        }
         
-        // Run on load
         window.onload = updateDateTime;
     </script>
 
