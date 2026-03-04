@@ -3,12 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Editable Receipt Generator</title>
-    <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
+    <title>Metro Agro Receipt System</title>
     <style>
+        :root {
+            --primary-blue: #3498db;
+            --success-green: #2ecc71;
+            --warning-orange: #e67e22;
+            --neutral-gray: #95a5a6;
+            --bg-dark: #232f3e;
+        }
+
         body {
-            font-family: 'Courier New', Courier, monospace;
-            background-color: #e0e0e0;
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background-color: var(--bg-dark);
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -16,142 +23,190 @@
             margin: 0;
         }
 
-        .controls-container {
-            width: 90mm;
-            background: #fff;
+        /* --- Main Form Container --- */
+        .form-container {
+            background: white;
+            width: 100%;
+            max-width: 450px;
             padding: 20px;
-            border-radius: 10px;
-            margin-bottom: 20px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
         }
 
+        .input-group { margin-bottom: 10px; }
+        label {
+            display: block;
+            font-size: 11px;
+            color: #7f8c8d;
+            margin-bottom: 3px;
+            font-weight: 600;
+        }
+        input {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+            box-sizing: border-box;
+        }
+
+        .row { display: flex; gap: 10px; }
+        .row .input-group { flex: 1; }
+
+        /* --- Buttons --- */
+        .button-grid { display: flex; flex-direction: column; gap: 8px; margin-top: 15px; }
         .btn {
             border: none;
             color: white;
-            padding: 15px;
-            font-size: 16px;
+            padding: 12px;
+            border-radius: 4px;
             font-weight: bold;
-            border-radius: 5px;
             cursor: pointer;
             text-transform: uppercase;
         }
+        .btn-preview { background-color: var(--primary-blue); }
+        .btn-print { background-color: var(--success-green); flex: 1; }
+        .btn-archive { background-color: var(--warning-orange); flex: 1; }
+        .btn-reset { background-color: var(--neutral-gray); }
 
-        .btn-preview { background-color: #3498db; width: 100%; }
-        .row { display: flex; gap: 10px; }
-        .btn-print { background-color: #27ae60; flex: 1; }
-        .btn-archive { background-color: #e67e22; flex: 1; }
-        .btn-reset { background-color: #95a5a6; width: 100%; }
-
-        #receipt {
-            background-color: white;
-            width: 72mm;
-            padding: 8mm;
-            box-shadow: 0 0 15px rgba(0,0,0,0.2);
-            font-size: 13px;
-            line-height: 1.3;
-            color: #000;
-        }
-
-        .center { text-align: center; }
-        .bold { font-weight: bold; }
-        .divider { border-top: 1px dashed #000; margin: 8px 0; }
-        .double-divider { border-top: 3px double #000; margin: 8px 0; height: 0; }
-        
-        /* Barcode Area */
-        .barcode-container {
-            margin-top: 15px;
-            text-align: center;
-        }
-        #barcode {
+        /* --- Archive Section --- */
+        .archive-list {
+            margin-top: 20px;
             width: 100%;
-            max-height: 60px;
+            max-width: 450px;
+            background: #fff;
+            padding: 15px;
+            border-radius: 8px;
+            display: none;
         }
+        .archive-item {
+            font-size: 12px;
+            border-bottom: 1px solid #eee;
+            padding: 5px 0;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        /* --- Receipt Styles (Print Only) --- */
+        #receipt-output { display: none; }
 
         @media print {
-            .controls-container { display: none !important; }
-            body { background-color: white; padding: 0; }
-            #receipt { box-shadow: none; width: 100%; margin: 0; }
+            .form-container, .archive-list { display: none !important; }
+            #receipt-output {
+                display: block;
+                width: 58mm;
+                font-family: 'Courier New', Courier, monospace;
+                font-size: 12px;
+                text-transform: uppercase;
+            }
+            .dotted-line { border-top: 2px dotted #000; margin: 5px 0; }
+            .center { text-align: center; }
         }
     </style>
 </head>
 <body>
 
-    <div class="controls-container">
-        <button class="btn btn-preview" onclick="updateBarcode()">Update Barcode</button>
-        <div class="row">
-            <button class="btn btn-print" onclick="window.print()">Print</button>
-            <button class="btn btn-archive" onclick="alert('Archive saved')">Archive</button>
+    <div class="form-container">
+        <div class="input-group">
+            <label>Business Name</label>
+            <input type="text" id="bizName" value="METRO AGRO MACHINERY & SPARES LTD">
         </div>
-        <button class="btn btn-reset" onclick="resetReceipt()">Reset to 1</button>
+        <div class="input-group">
+            <label>Address & City</label>
+            <input type="text" id="bizAddr" value="P O BOX 79790 MOROGORO">
+        </div>
+        <div class="row">
+            <div class="input-group"><label>Phone</label><input type="text" id="bizPhone" value="+255 783 290 717"></div>
+            <div class="input-group"><label>Street</label><input type="text" id="bizStreet" value="MSAMVU"></div>
+        </div>
+        <div class="row">
+            <div class="input-group"><label>TIN</label><input type="text" id="bizTin" value="101840182"></div>
+            <div class="input-group"><label>VRN</label><input type="text" id="bizVrn" value="10016208N"></div>
+        </div>
+        <div class="input-group">
+            <label>Customer Name</label>
+            <input type="text" id="custName" placeholder="Enter Name">
+        </div>
+        <div class="row">
+            <div class="input-group"><label>Item</label><input type="text" id="itemName" placeholder="BRAKE BOOSTER"></div>
+            <div class="input-group"><label>Total TZS</label><input type="number" id="itemTotal" placeholder="300000"></div>
+        </div>
+        <div class="input-group">
+            <label>Receipt No.</label>
+            <input type="text" id="receiptNo" value="36765">
+        </div>
+
+        <div class="button-grid">
+            <button class="btn btn-preview" onclick="prepareReceipt()">Preview</button>
+            <div class="row">
+                <button class="btn btn-print" onclick="window.print()">Print</button>
+                <button class="btn btn-archive" onclick="saveToArchive()">Archive</button>
+            </div>
+            <button class="btn btn-reset" onclick="resetCount()">Reset to 1</button>
+        </div>
     </div>
 
-    <div id="receipt">
-        <div class="center">
-            <div contenteditable="true">Halmashauri ya Jiji la Dar es Salaam</div>
-            <div>Receipt No: <span id="receipt-no" contenteditable="true">1421102411123</span></div>
-        </div>
-        
-        <div class="divider"></div>
-        <div class="center bold" contenteditable="true">KAJENJERE TRADING CO.LTD</div>
-        <div class="double-divider"></div>
+    <div class="archive-list" id="archiveDisplay">
+        <strong>Recent Archives</strong>
+        <div id="archiveItems"></div>
+    </div>
 
-        <div>ADA ZA TAKA :Tsh <span contenteditable="true">30000.00</span></div>
-        <br>
-        <div class="bold">JUMLA :Tsh <span contenteditable="true">30000.00</span></div>
-        
-        <div class="double-divider"></div>
-
-        <div>JINA LA MLIPAJI :<span contenteditable="true">Mnazi. Traspot</span></div>
-        <div contenteditable="true">taka mwezi Feb/2026/ kamata</div>
-        <div class="double-divider"></div>
-
-        <div id="current-date" contenteditable="true">TAREHE 04-03-2026 11:12:30</div>
-        
-        <div class="center bold" style="margin-top: 10px; font-size: 11px;">
-            HII NI STAKABADHI HALALI YA FEDHA ILIYOLIPWA
-        </div>
-
-        <div class="barcode-container">
-            <svg id="barcode"></svg>
-        </div>
+    <div id="receipt-output">
+        <div class="center" id="out-biz"></div>
+        <div class="dotted-line"></div>
+        <div id="out-addr"></div>
+        <div id="out-phone"></div>
+        <div class="dotted-line"></div>
+        <div>NO: <span id="out-no"></span></div>
+        <div>ITEM: <span id="out-item"></span></div>
+        <div>TOTAL: TSH <span id="out-total"></span></div>
+        <div class="dotted-line"></div>
+        <div>CUST: <span id="out-cust"></span></div>
+        <div class="dotted-line"></div>
+        <div id="out-date" class="center"></div>
     </div>
 
     <script>
-        function updateDateTime() {
-            const now = new Date();
-            const dateStr = now.toLocaleDateString('en-GB').replace(/\//g, '-');
-            const timeStr = now.toLocaleTimeString('en-GB');
-            document.getElementById('current-date').innerText = `TAREHE ${dateStr} ${timeStr}`;
+        function prepareReceipt() {
+            document.getElementById('out-biz').innerText = document.getElementById('bizName').value;
+            document.getElementById('out-addr').innerText = document.getElementById('bizAddr').value;
+            document.getElementById('out-phone').innerText = "TEL: " + document.getElementById('bizPhone').value;
+            document.getElementById('out-no').innerText = document.getElementById('receiptNo').value;
+            document.getElementById('out-item').innerText = document.getElementById('itemName').value;
+            document.getElementById('out-total').innerText = document.getElementById('itemTotal').value;
+            document.getElementById('out-cust').innerText = document.getElementById('custName').value;
+            document.getElementById('out-date').innerText = new Date().toLocaleString();
+            alert("Ready to print!");
         }
 
-        // Logic to generate the barcode based on the Receipt Number
-        function updateBarcode() {
-            const receiptNo = document.getElementById('receipt-no').innerText;
-            JsBarcode("#barcode", receiptNo, {
-                format: "CODE128",
-                lineColor: "#000",
-                width: 2,
-                height: 40,
-                displayValue: false // Keeps it clean like your photo
-            });
+        function saveToArchive() {
+            const data = {
+                no: document.getElementById('receiptNo').value,
+                name: document.getElementById('custName').value,
+                total: document.getElementById('itemTotal').value
+            };
+            let archives = JSON.parse(localStorage.getItem('receipts') || "[]");
+            archives.push(data);
+            localStorage.setItem('receipts', JSON.stringify(archives));
+            displayArchives();
         }
 
-        function resetReceipt() {
-            document.getElementById('receipt-no').innerText = "1";
-            updateBarcode();
+        function displayArchives() {
+            const archives = JSON.parse(localStorage.getItem('receipts') || "[]");
+            if(archives.length > 0) {
+                document.getElementById('archiveDisplay').style.display = 'block';
+                document.getElementById('archiveItems').innerHTML = archives.map(a => 
+                    `<div class="archive-item"><span>#${a.no} ${a.name}</span> <span>TSH ${a.total}</span></div>`
+                ).join('');
+            }
         }
 
-        window.onload = () => {
-            updateDateTime();
-            updateBarcode();
-        };
+        function resetCount() {
+            document.getElementById('receiptNo').value = "1";
+        }
 
-        // Auto-update barcode while typing the receipt number
-        document.getElementById('receipt-no').addEventListener('input', updateBarcode);
+        window.onload = displayArchives;
+        window.onbeforeprint = prepareReceipt;
     </script>
-
 </body>
 </html>
