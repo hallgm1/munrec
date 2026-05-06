@@ -29,6 +29,22 @@
             gap: 10px;
         }
 
+        .sms-interface {
+            border-top: 1px solid #eee;
+            padding-top: 10px;
+            margin-top: 5px;
+        }
+
+        .sms-input {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            box-sizing: border-box;
+            font-size: 14px;
+        }
+
         .btn {
             border: none;
             color: white;
@@ -45,15 +61,15 @@
         .btn-preview { background-color: #3498db; width: 100%; }
         .row { display: flex; gap: 10px; }
         .btn-print { background-color: #27ae60; flex: 1; }
-        .btn-archive { background-color: #e67e22; flex: 1; }
+        .btn-sms { background-color: #9b59b6; flex: 1; }
         .btn-reset { background-color: #95a5a6; width: 100%; }
 
         /* --- Receipt Styling --- */
         #receipt {
             background-color: white;
             width: 72mm;
-            /* 1. INCREASE LENGTH: Added significant bottom padding (approx 50% more) */
-            padding: 8mm 8mm 45mm 8mm; 
+            /* 1. INCREASE LENGTH: Increased bottom padding by roughly 1/4th (25%) */
+            padding: 8mm 8mm 35mm 8mm; 
             box-shadow: 0 0 15px rgba(0,0,0,0.2);
             font-size: 13px;
             line-height: 1.3;
@@ -64,20 +80,7 @@
         .center { text-align: center; }
         .bold { font-weight: bold; }
         
-        /* 2. CONSECUTIVE EQUAL SIGNS: Using a repeating background to mimic POS style */
-        .equal-divider {
-            height: 4mm; /* Total height for the double row */
-            background-image: 
-                linear-gradient(to right, black 100%, transparent 0%),
-                linear-gradient(to right, black 100%, transparent 0%);
-            background-position: 0 0, 0 2mm; /* 1mm space between lines */
-            background-size: 100% 0.5pt; /* Thin sharp lines */
-            background-repeat: no-repeat;
-            margin: 8px 0;
-            position: relative;
-        }
-        
-        /* Using text characters for the most authentic "===============" look */
+        /* 2. CONSECUTIVE EQUAL SIGNS: Mimicking the Halmashauri POS style */
         .equal-text-divider {
             letter-spacing: -1px;
             overflow: hidden;
@@ -110,11 +113,16 @@
 
     <div class="controls-container">
         <button class="btn btn-preview" onclick="togglePreview()">Preview</button>
+        
         <div class="row">
             <button class="btn btn-print" onclick="handlePrint()">Print</button>
-            <button class="btn btn-archive" onclick="alert('Receipt Saved to Archive')">Archive</button>
+            <button class="btn btn-reset" onclick="resetReceipt()">Reset</button>
         </div>
-        <button class="btn btn-reset" onclick="resetReceipt()">Reset to 1</button>
+
+        <div class="sms-interface">
+            <input type="tel" id="sms-number" class="sms-input" placeholder="Phone Number (e.g. 0783290717)">
+            <button class="btn btn-sms" onclick="sendSMS()">Send Receipt Details via SMS</button>
+        </div>
     </div>
 
     <div id="receipt">
@@ -124,19 +132,19 @@
         </div>
         
         <div class="equal-text-divider">------------------------------------------</div>
-        <div class="center bold" contenteditable="true">KAJENJERE TRADING CO.LTD</div>
+        <div class="center bold" id="biz-name" contenteditable="true">KAJENJERE TRADING CO.LTD</div>
         <div class="equal-text-divider">==========================================</div>
 
-        <div>ADA ZA TAKA :Tsh <span contenteditable="true">30000.00</span></div>
+        <div>ADA ZA TAKA :Tsh <span id="amount-val" contenteditable="true">30000.00</span></div>
         <br>
-        <div class="bold">JUMLA :Tsh <span contenteditable="true">30000.00</span></div>
+        <div class="bold">JUMLA :Tsh <span id="total-val" contenteditable="true">30000.00</span></div>
         
         <div class="equal-text-divider">==========================================</div>
 
-        <div>JINA LA MLIPAJI :<span contenteditable="true">Mnazi. Traspot</span></div>
-        <div contenteditable="true">taka mwezi Feb/2026/ kamata</div>
+        <div>JINA LA MLIPAJI :<span id="payer-name" contenteditable="true">Mnazi. Traspot</span></div>
+        <div id="payment-desc" contenteditable="true">taka mwezi Feb/2026/ kamata</div>
         <div>ANUANI : <span contenteditable="true">N/A</span></div>
-        <div>MPOKEAJI :<span contenteditable="true">KAJENJERE TRADING CO.LTD 191</span></div>
+        <div>MPOKEAJI :<span id="recipient-name" contenteditable="true">KAJENJERE TRADING CO.LTD 191</span></div>
 
         <div class="equal-text-divider">==========================================</div>
 
@@ -177,6 +185,26 @@
         function handlePrint() {
             updateBarcode();
             window.print();
+        }
+
+        function sendSMS() {
+            const phone = document.getElementById('sms-number').value;
+            if (!phone) {
+                alert("Please enter a phone number first.");
+                return;
+            }
+
+            const biz = document.getElementById('biz-name').innerText;
+            const rcpt = document.getElementById('receipt-no').innerText;
+            const amt = document.getElementById('total-val').innerText;
+            const payer = document.getElementById('payer-name').innerText;
+            const date = document.getElementById('current-date').innerText;
+
+            // Construct SMS body
+            const message = `RECEIPT: ${biz}\nNo: ${rcpt}\nAmt: Tsh ${amt}\nFrom: ${payer}\nDate: ${date}`;
+            
+            // This opens the default SMS app on Android with the text filled in
+            window.location.href = `sms:${phone}?body=${encodeURIComponent(message)}`;
         }
 
         function resetReceipt() {
