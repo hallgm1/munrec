@@ -3,40 +3,53 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Metro Agro Municipal POS</title>
+    <title>Metro Agro POS System</title>
     <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <style>
-        body { font-family: sans-serif; background: #232f3e; display: flex; justify-content: center; padding: 20px; }
-        .form-container { background: white; padding: 20px; border-radius: 8px; width: 100%; max-width: 400px; }
-        input { width: 100%; padding: 10px; margin: 5px 0 15px 0; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
-        .btn { border: none; color: white; padding: 15px; border-radius: 4px; font-weight: bold; cursor: pointer; width: 100%; text-transform: uppercase; margin-bottom: 10px; }
-        .btn-print { background: #2ecc71; }
+        :root {
+            --blue: #3498db; --green: #2ecc71; --orange: #e67e22; --gray: #95a5a6; --dark: #1a252f;
+        }
 
-        /* Receipt Printing Styles */
-        #receipt-print { display: none; }
-        
+        body { font-family: 'Segoe UI', Arial, sans-serif; background: var(--dark); display: flex; justify-content: center; padding: 20px; margin: 0; }
+
+        /* --- INTERFACE STYLING --- */
+        .app-container { background: white; width: 100%; max-width: 420px; padding: 20px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        .input-group { margin-bottom: 12px; }
+        label { display: block; font-size: 11px; font-weight: bold; color: #7f8c8d; margin-bottom: 4px; text-transform: uppercase; }
+        input { width: 100%; padding: 10px; border: 1px solid #dcdde1; border-radius: 6px; font-size: 14px; box-sizing: border-box; background: #f9f9f9; }
+        .row { display: flex; gap: 10px; }
+        .row .input-group { flex: 1; }
+
+        /* Button Grid */
+        .btn { border: none; color: white; padding: 15px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 14px; text-transform: uppercase; width: 100%; margin-top: 10px; }
+        .btn-preview { background: var(--blue); }
+        .btn-print { background: var(--green); flex: 1; }
+        .btn-archive { background: var(--orange); flex: 1; }
+        .btn-reset { background: var(--gray); }
+
+        /* --- RECEIPT STYLING (PRINT ONLY) --- */
+        #receipt-render { display: none; }
+
         @media print {
-            body { background: white; padding: 0; }
-            .form-container { display: none; }
-            #receipt-print { 
+            .app-container { display: none; }
+            #receipt-render { 
                 display: block; 
                 width: 58mm; 
                 font-family: 'Courier New', Courier, monospace; 
                 font-size: 12px; 
-                line-height: 1.3;
-                /* Requirement 1: Increase length by 50% */
-                padding-bottom: 40mm; 
                 color: black;
+                /* Requirement 1: Increase length by 50% */
+                padding-bottom: 60mm; 
+                line-height: 1.3;
             }
-            /* Requirement 2: Spaced Dotted Lines */
-            .dotted-divider {
+            /* Requirement 2: Dotted lines with more space */
+            .custom-dots {
                 height: 2px;
-                background-image: linear-gradient(to right, black 33%, rgba(255,255,255,0) 0%);
+                background-image: linear-gradient(to right, black 25%, rgba(255,255,255,0) 0%);
                 background-position: bottom;
-                background-size: 6px 1px; /* Adjust 6px to increase/decrease space between dots */
+                background-size: 8px 1px; /* Increase 8px for more space between dots */
                 background-repeat: repeat-x;
-                margin: 8px 0;
+                margin: 10px 0;
             }
             .center { text-align: center; }
             .bold { font-weight: bold; }
@@ -45,80 +58,91 @@
 </head>
 <body>
 
-<div class="form-container">
-    <label>Business Name</label>
-    <input type="text" id="bizName" value="METRO AGRO MACHINERY & SPARES LTD">
-    <label>Customer Name</label>
-    <input type="text" id="custName" value="WILLIAM MATHAYO GENDO">
-    <label>Total Amount (TZS)</label>
-    <input type="number" id="totalAmt" value="30000">
-    <label>Receipt No.</label>
-    <input type="text" id="rcptNo" value="1421102411123">
+<div class="app-container">
+    <div class="input-group"><label>Business Name</label><input type="text" id="bizName" value="METRO AGRO MACHINERY & SPARES LTD"></div>
+    <div class="input-group"><label>Address & City</label><input type="text" id="bizAddr" value="P O BOX 79790 MOROGORO"></div>
+    
+    <div class="row">
+        <div class="input-group"><label>Phone</label><input type="text" id="bizPhone" value="+255 783 290 717"></div>
+        <div class="input-group"><label>Street</label><input type="text" id="bizStreet" value="MSAMVU"></div>
+    </div>
 
-    <button class="btn btn-print" onclick="generateAndPrint()">PRINT RECEIPT</button>
+    <div class="input-group"><label>Customer Name</label><input type="text" id="custName" placeholder="WILLIAM MATHAYO GENDO"></div>
+    
+    <div class="row">
+        <div class="input-group"><label>Item</label><input type="text" id="itemName" value="BRAKE BOOSTER"></div>
+        <div class="input-group"><label>Total TZS</label><input type="number" id="totalAmt" value="300000"></div>
+    </div>
+
+    <div class="input-group"><label>Receipt No.</label><input type="text" id="rcptNo" value="1421102411123"></div>
+
+    <button class="btn btn-preview" onclick="updateReceipt()">PREVIEW</button>
+    <div class="row">
+        <button class="btn btn-print" onclick="window.print()">PRINT</button>
+        <button class="btn btn-archive" onclick="alert('Receipt Archived')">ARCHIVE</button>
+    </div>
+    <button class="btn btn-reset" onclick="document.getElementById('rcptNo').value='1'">RESET TO 1</button>
 </div>
 
-<div id="receipt-print">
+<div id="receipt-render">
     <div class="center">
         Halmashauri ya Jiji la Dar es Salaam<br>
-        Receipt No: <span id="p-no"></span>
+        Receipt No: <span id="r-no"></span>
     </div>
     
-    <div class="dotted-divider"></div>
-    <div class="center bold" id="p-biz"></div>
-    <div class="dotted-divider"></div>
+    <div class="custom-dots"></div>
+    <div class="center bold" id="r-biz"></div>
+    <div class="custom-dots"></div>
 
-    <div id="p-desc">ADA ZA TAKA :Tsh <span id="p-amt1"></span></div>
+    <div>ADA ZA TAKA :Tsh <span id="r-amt1"></span></div>
     <br>
-    <div class="bold">JUMLA :Tsh <span id="p-amt2"></span></div>
+    <div class="bold">JUMLA :Tsh <span id="r-amt2"></span></div>
     
-    <div class="dotted-divider"></div>
+    <div class="custom-dots"></div>
 
-    <div>JINA LA MLIPAJI :<span id="p-cust"></span></div>
-    <div>ANUANI : MSAMVU, MOROGORO</div>
-    <div>MPOKEAJI : <span id="p-biz2"></span></div>
+    <div>JINA LA MLIPAJI :<span id="r-cust"></span></div>
+    <div>ANUANI : <span id="r-street"></span></div>
+    <div>MPOKEAJI : <span id="r-biz2"></span></div>
 
-    <div class="dotted-divider"></div>
+    <div class="custom-dots"></div>
 
-    <div id="p-date" class="center"></div>
-    <div class="center bold" style="margin-top: 5px; font-size: 10px;">
+    <div id="r-date" class="center"></div>
+    <div class="center bold" style="font-size: 10px; margin-top: 5px;">
         HII NI STAKABADHI HALALI YA FEDHA ILIYOLIPWA
     </div>
 
-    <div class="center" style="margin-top: 15px;">
-        <svg id="barcode"></svg>
+    <div class="center" style="margin-top: 20px;">
+        <svg id="barcode-img"></svg>
     </div>
 </div>
 
 <script>
-function generateAndPrint() {
-    // 1. Get Values
-    const biz = document.getElementById('bizName').value;
-    const cust = document.getElementById('custName').value;
-    const amt = Number(document.getElementById('totalAmt').value).toFixed(2);
-    const no = document.getElementById('rcptNo').value;
-    const now = new Date();
+    function updateReceipt() {
+        // Sync data from inputs to print area
+        document.getElementById('r-biz').innerText = document.getElementById('bizName').value;
+        document.getElementById('r-biz2').innerText = document.getElementById('bizName').value;
+        document.getElementById('r-cust').innerText = document.getElementById('custName').value;
+        document.getElementById('r-street').innerText = document.getElementById('bizStreet').value;
+        document.getElementById('r-no').innerText = document.getElementById('rcptNo').value;
+        
+        const price = Number(document.getElementById('totalAmt').value).toFixed(2);
+        document.getElementById('r-amt1').innerText = price;
+        document.getElementById('r-amt2').innerText = price;
 
-    // 2. Fill Receipt
-    document.getElementById('p-biz').innerText = biz;
-    document.getElementById('p-biz2').innerText = biz;
-    document.getElementById('p-cust').innerText = cust;
-    document.getElementById('p-amt1').innerText = amt;
-    document.getElementById('p-amt2').innerText = amt;
-    document.getElementById('p-no').innerText = no;
-    document.getElementById('p-date').innerText = "TAREHE " + now.toLocaleDateString('en-GB') + " " + now.toLocaleTimeString('en-GB');
+        const now = new Date();
+        document.getElementById('r-date').innerText = "TAREHE " + now.toLocaleDateString('en-GB') + " " + now.toLocaleTimeString('en-GB');
 
-    // 3. Generate Barcode (Requirement 3)
-    JsBarcode("#barcode", no, {
-        format: "CODE128",
-        width: 1.5,
-        height: 40,
-        displayValue: false
-    });
+        // Generate Barcode
+        JsBarcode("#barcode-img", document.getElementById('rcptNo').value, {
+            format: "CODE128",
+            width: 1.8,
+            height: 50,
+            displayValue: false
+        });
+    }
 
-    // 4. Print
-    setTimeout(() => { window.print(); }, 200);
-}
+    // Auto-update before printing
+    window.onbeforeprint = updateReceipt;
 </script>
 
 </body>
