@@ -3,165 +3,123 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Editable Receipt Generator</title>
+    <title>Metro Agro Municipal POS</title>
+    <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <style>
-        body {
-            font-family: 'Courier New', Courier, monospace;
-            background-color: #e0e0e0;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            padding: 20px;
-            margin: 0;
-        }
+        body { font-family: sans-serif; background: #232f3e; display: flex; justify-content: center; padding: 20px; }
+        .form-container { background: white; padding: 20px; border-radius: 8px; width: 100%; max-width: 400px; }
+        input { width: 100%; padding: 10px; margin: 5px 0 15px 0; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+        .btn { border: none; color: white; padding: 15px; border-radius: 4px; font-weight: bold; cursor: pointer; width: 100%; text-transform: uppercase; margin-bottom: 10px; }
+        .btn-print { background: #2ecc71; }
 
-        /* --- Button Panel Styling --- */
-        .controls-container {
-            width: 90mm;
-            background: #fff;
-            padding: 20px;
-            border-radius: 10px;
-            margin-bottom: 20px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-
-        .btn {
-            border: none;
-            color: white;
-            padding: 15px;
-            font-size: 16px;
-            font-weight: bold;
-            border-radius: 5px;
-            cursor: pointer;
-            text-transform: uppercase;
-            transition: opacity 0.2s;
-        }
-
-        .btn:active { opacity: 0.8; }
-
-        .btn-preview { background-color: #3498db; width: 100%; }
+        /* Receipt Printing Styles */
+        #receipt-print { display: none; }
         
-        .row {
-            display: flex;
-            gap: 10px;
-        }
-        
-        .btn-print { background-color: #27ae60; flex: 1; }
-        .btn-archive { background-color: #e67e22; flex: 1; }
-        
-        .btn-reset { background-color: #95a5a6; width: 100%; }
-
-        /* --- Receipt Styling --- */
-        #receipt {
-            background-color: white;
-            width: 72mm;
-            padding: 8mm;
-            box-shadow: 0 0 15px rgba(0,0,0,0.2);
-            font-size: 13px;
-            line-height: 1.3;
-            color: #000;
-        }
-
-        .preview-mode {
-            outline: 5px solid #3498db;
-        }
-
-        .center { text-align: center; }
-        .bold { font-weight: bold; }
-        .divider { border-top: 1px dashed #000; margin: 8px 0; }
-        .double-divider { border-top: 3px double #000; margin: 8px 0; height: 0; }
-        
-        [contenteditable="true"]:focus {
-            background-color: #fffde7;
-            outline: 1px solid #3498db;
-        }
-
-        .barcode {
-            width: 100%;
-            height: 40px;
-            background: repeating-linear-gradient(90deg, #000, #000 1px, #fff 1px, #fff 3px);
-            margin-top: 15px;
-        }
-
-        /* --- Print Rules --- */
         @media print {
-            .controls-container { display: none !important; }
-            body { background-color: white; padding: 0; }
-            #receipt { box-shadow: none; width: 100%; margin: 0; }
+            body { background: white; padding: 0; }
+            .form-container { display: none; }
+            #receipt-print { 
+                display: block; 
+                width: 58mm; 
+                font-family: 'Courier New', Courier, monospace; 
+                font-size: 12px; 
+                line-height: 1.3;
+                /* Requirement 1: Increase length by 50% */
+                padding-bottom: 40mm; 
+                color: black;
+            }
+            /* Requirement 2: Spaced Dotted Lines */
+            .dotted-divider {
+                height: 2px;
+                background-image: linear-gradient(to right, black 33%, rgba(255,255,255,0) 0%);
+                background-position: bottom;
+                background-size: 6px 1px; /* Adjust 6px to increase/decrease space between dots */
+                background-repeat: repeat-x;
+                margin: 8px 0;
+            }
+            .center { text-align: center; }
+            .bold { font-weight: bold; }
         }
     </style>
 </head>
 <body>
 
-    <div class="controls-container">
-        <button class="btn btn-preview" onclick="togglePreview()">Preview</button>
-        
-        <div class="row">
-            <button class="btn btn-print" onclick="window.print()">Print</button>
-            <button class="btn btn-archive" onclick="alert('Receipt Saved to Archive')">Archive</button>
-        </div>
-        
-        <button class="btn btn-reset" onclick="resetReceipt()">Reset to 1</button>
+<div class="form-container">
+    <label>Business Name</label>
+    <input type="text" id="bizName" value="METRO AGRO MACHINERY & SPARES LTD">
+    <label>Customer Name</label>
+    <input type="text" id="custName" value="WILLIAM MATHAYO GENDO">
+    <label>Total Amount (TZS)</label>
+    <input type="number" id="totalAmt" value="30000">
+    <label>Receipt No.</label>
+    <input type="text" id="rcptNo" value="1421102411123">
+
+    <button class="btn btn-print" onclick="generateAndPrint()">PRINT RECEIPT</button>
+</div>
+
+<div id="receipt-print">
+    <div class="center">
+        Halmashauri ya Jiji la Dar es Salaam<br>
+        Receipt No: <span id="p-no"></span>
+    </div>
+    
+    <div class="dotted-divider"></div>
+    <div class="center bold" id="p-biz"></div>
+    <div class="dotted-divider"></div>
+
+    <div id="p-desc">ADA ZA TAKA :Tsh <span id="p-amt1"></span></div>
+    <br>
+    <div class="bold">JUMLA :Tsh <span id="p-amt2"></span></div>
+    
+    <div class="dotted-divider"></div>
+
+    <div>JINA LA MLIPAJI :<span id="p-cust"></span></div>
+    <div>ANUANI : MSAMVU, MOROGORO</div>
+    <div>MPOKEAJI : <span id="p-biz2"></span></div>
+
+    <div class="dotted-divider"></div>
+
+    <div id="p-date" class="center"></div>
+    <div class="center bold" style="margin-top: 5px; font-size: 10px;">
+        HII NI STAKABADHI HALALI YA FEDHA ILIYOLIPWA
     </div>
 
-    <div id="receipt">
-        <div class="center">
-            <div contenteditable="true">Halmashauri ya Jiji la Dar es Salaam</div>
-            <div>Receipt No: <span id="receipt-no" contenteditable="true">1421102411123</span></div>
-        </div>
-        
-        <div class="divider"></div>
-        <div class="center bold" contenteditable="true">KAJENJERE TRADING CO.LTD</div>
-        <div class="double-divider"></div>
-
-        <div>ADA ZA TAKA :Tsh <span contenteditable="true">30000.00</span></div>
-        <br>
-        <div class="bold">JUMLA :Tsh <span contenteditable="true">30000.00</span></div>
-        
-        <div class="double-divider"></div>
-
-        <div>JINA LA MLIPAJI :<span contenteditable="true">Mnazi. Traspot</span></div>
-        <div contenteditable="true">taka mwezi Feb/2026/ kamata</div>
-        <div>ANUANI : <span contenteditable="true">N/A</span></div>
-        <div>MPOKEAJI :<span contenteditable="true">KAJENJERE TRADING CO.LTD 191</span></div>
-
-        <div class="double-divider"></div>
-
-        <div id="current-date" contenteditable="true">TAREHE 04-03-2026 11:12:30</div>
-        
-        <div class="center bold" style="margin-top: 10px; font-size: 11px;" contenteditable="true">
-            HII NI STAKABADHI HALALI YA FEDHA ILIYOLIPWA
-        </div>
-
-        <div class="barcode"></div>
+    <div class="center" style="margin-top: 15px;">
+        <svg id="barcode"></svg>
     </div>
+</div>
 
-    <script>
-        // Update date on load
-        function updateDateTime() {
-            const now = new Date();
-            const dateStr = now.toLocaleDateString('en-GB').replace(/\//g, '-');
-            const timeStr = now.toLocaleTimeString('en-GB');
-            document.getElementById('current-date').innerText = `TAREHE ${dateStr} ${timeStr}`;
-        }
+<script>
+function generateAndPrint() {
+    // 1. Get Values
+    const biz = document.getElementById('bizName').value;
+    const cust = document.getElementById('custName').value;
+    const amt = Number(document.getElementById('totalAmt').value).toFixed(2);
+    const no = document.getElementById('rcptNo').value;
+    const now = new Date();
 
-        // Toggle Preview Mode (visual cue)
-        function togglePreview() {
-            document.getElementById('receipt').classList.toggle('preview-mode');
-        }
+    // 2. Fill Receipt
+    document.getElementById('p-biz').innerText = biz;
+    document.getElementById('p-biz2').innerText = biz;
+    document.getElementById('p-cust').innerText = cust;
+    document.getElementById('p-amt1').innerText = amt;
+    document.getElementById('p-amt2').innerText = amt;
+    document.getElementById('p-no').innerText = no;
+    document.getElementById('p-date').innerText = "TAREHE " + now.toLocaleDateString('en-GB') + " " + now.toLocaleTimeString('en-GB');
 
-        // Reset Receipt Number to 1
-        function resetReceipt() {
-            if(confirm("Are you sure you want to reset the receipt number?")) {
-                document.getElementById('receipt-no').innerText = "1";
-            }
-        }
-        
-        window.onload = updateDateTime;
-    </script>
+    // 3. Generate Barcode (Requirement 3)
+    JsBarcode("#barcode", no, {
+        format: "CODE128",
+        width: 1.5,
+        height: 40,
+        displayValue: false
+    });
+
+    // 4. Print
+    setTimeout(() => { window.print(); }, 200);
+}
+</script>
 
 </body>
 </html>
